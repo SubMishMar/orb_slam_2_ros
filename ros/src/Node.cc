@@ -66,6 +66,16 @@ void Node::PublishPositionAsTransform (cv::Mat position) {
   tf::Transform transform = TransformFromMat (position);
   static tf::TransformBroadcaster tf_broadcaster;
   tf_broadcaster.sendTransform(tf::StampedTransform(transform, current_frame_time_, map_frame_id_param_, camera_frame_id_param_));
+
+  tf::Matrix3x3 tf_pose2cam_R(0, 0, 1,
+                            -1, 0, 0,
+                             0,-1, 0);
+  tf::Vector3 tf_pose2cam_T(0, 0, 0);
+
+  tf::Transform tf_pose2cam_RT(tf_pose2cam_R, tf_pose2cam_T);
+  static tf::TransformBroadcaster tf_broadcaster_2;
+  tf_broadcaster_2.sendTransform(tf::StampedTransform(tf_pose2cam_RT,
+          current_frame_time_, camera_frame_id_param_, "camera_frame"));
 }
 
 void Node::PublishPositionAsPoseStamped (cv::Mat position) {
@@ -152,15 +162,15 @@ sensor_msgs::PointCloud2 Node::MapPointsToPointCloud (std::vector<ORB_SLAM2::Map
 
 	unsigned char *cloud_data_ptr = &(cloud.data[0]);
 
-  float data_array[num_channels];
+  float data_array[3];
   for (unsigned int i=0; i<cloud.width; i++) {
-    if (map_points.at(i)->nObs >= min_observations_per_point_) {
+    if (map_points.at(i)->nObs >= min_observations_per_point_) {//nObs isBad()
       data_array[0] = map_points.at(i)->GetWorldPos().at<float> (2); //x. Do the transformation by just reading at the position of z instead of x
       data_array[1] = -1.0* map_points.at(i)->GetWorldPos().at<float> (0); //y. Do the transformation by just reading at the position of x instead of y
       data_array[2] = -1.0* map_points.at(i)->GetWorldPos().at<float> (1); //z. Do the transformation by just reading at the position of y instead of z
       //TODO dont hack the transformation but have a central conversion function for MapPointsToPointCloud and TransformFromMat
 
-      memcpy(cloud_data_ptr+(i*cloud.point_step), data_array, num_channels*sizeof(float));
+      memcpy(cloud_data_ptr+(i*cloud.point_step), data_array, 3*sizeof(float));
     }
   }
 
