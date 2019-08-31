@@ -1,0 +1,15 @@
+<launch>
+  <node name="orb_slam2_stereo" pkg="orb_slam2_ros"
+      type="orb_slam2_ros_stereo" args="
+          $(find orb_slam2_ros)/orb_slam2/Vocabulary/ORBvoc.txt
+          $(find orb_slam2_ros)/orb_slam2/config/nerian_stereo.yaml"
+      output="screen">
+       <remap from="image_left/image_color_rect" to="/nerian_stereo/left_image" />
+       <remap from="image_right/image_color_rect" to="/nerian_stereo/right_image" />
+
+       <param name="publish_pointcloud" type="bool" value="true" />
+       <param name="publish_pose" type="bool" value="true" />
+       <param name="pointcloud_frame_id" type="string" value="map" />
+       <param name="camera_frame_id" type="string" value="nerian_left_rectified" />
+  </node>
+</launch>
