@@ -26,7 +26,10 @@ Node::Node (ORB_SLAM2::System* pSLAM, ros::NodeHandle &node_handle, image_transp
 
   // Enable publishing camera's pose as PoseStamped message
   if (publish_pose_param_) {
-    pose_publisher_ = node_handle_.advertise<geometry_msgs::PoseStamped> (name_of_node_+"/pose", 1);
+    pose_publisher_ = node_handle_.advertise<geometry_msgs::PoseStamped>
+            (name_of_node_+"/pose", 1);
+    odometry_publisher_ = node_handle.advertise<nav_msgs::Odometry>
+            (name_of_node_+"/odom", 1);
   }
 }
 
@@ -83,6 +86,18 @@ void Node::PublishPositionAsPoseStamped (cv::Mat position) {
   tf::Stamped<tf::Pose> grasp_tf_pose(grasp_tf, current_frame_time_, map_frame_id_param_);
   geometry_msgs::PoseStamped pose_msg;
   tf::poseStampedTFToMsg (grasp_tf_pose, pose_msg);
+  nav_msgs::Odometry odom_msg;
+  odom_msg.header.stamp = pose_msg.header.stamp;
+  odom_msg.header.frame_id = pose_msg.header.frame_id;
+  odom_msg.child_frame_id = camera_frame_id_param_;
+  odom_msg.pose.pose.position.x = pose_msg.pose.position.x;
+  odom_msg.pose.pose.position.y = pose_msg.pose.position.y;
+  odom_msg.pose.pose.position.z = pose_msg.pose.position.z;
+  odom_msg.pose.pose.orientation.x = pose_msg.pose.orientation.x;
+  odom_msg.pose.pose.orientation.y = pose_msg.pose.orientation.y;
+  odom_msg.pose.pose.orientation.z = pose_msg.pose.orientation.z;
+  odom_msg.pose.pose.orientation.w = pose_msg.pose.orientation.w;
+  odometry_publisher_.publish(odom_msg);
   pose_publisher_.publish(pose_msg);
 }
 
